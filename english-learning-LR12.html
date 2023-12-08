@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Learning</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #1f2b37;
+            color: #ffffff;
+        }
+
+        #app {
+            text-align: center;
+            padding: 20px;
+            background-color: #71348a;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        #level {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        #word {
+            font-size: 30px;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            color: #333333;
+        }
+
+        #translation {
+            margin-bottom: 20px;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        #check, #prevWord, #nextWord {
+            background-color: #3498db;
+            color: #ffffff;
+            padding: 10px 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        #modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #3498db;
+            color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 24px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 80%;
+            width: 400px;
+        }
+
+        #result {
+            padding: 20px;
+            background-color: #2980b9;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        #closeModal {
+            background-color: #e74c3c;
+            color: #ffffff;
+            padding: 10px 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div id="level">Рівень: 1</div>
+        <div id="word"></div>
+        <input type="text" id="translation">
+        <button id="check">Перевірити</button>
+        <button id="prevWord">Попереднє слово</button>
+        <button id="nextWord">Наступне слово</button>
+        <div id="step"></div>
+        <div id="score"></div>
+    </div>
+    <div id="modal">
+        <div id="result"></div>
+        <button id="closeModal">Закрити</button>
+    </div>
+    <script>
+        $(document).ready(function () {
+            var levels = [
+                { words: [{ word: 'apple', translation: 'яблуко' }, { word: 'banana', translation: 'банан' }, { word: 'orange', translation: 'апельсин' }, { word: 'grape', translation: 'виноград' }, { word: 'strawberry', translation: 'полуниця' }] },
+                { words: [{ word: 'elephant', translation: 'слон' }, { word: 'mountain', translation: 'гора' }, { word: 'river', translation: 'ріка' }, { word: 'forest', translation: 'ліс' }, { word: 'desert', translation: 'пустеля' }] },
+                { words: [{ word: 'philosophy', translation: 'філософія' }, { word: 'complexity', translation: 'складність' }, { word: 'ambiguity', translation: 'неоднозначність' }, { word: 'intricate', translation: 'складний' }, { word: 'profound', translation: 'глибокий' }] }
+            ];
+
+            var currentLevel = 0;
+            var currentStep = 0;
+            var score = 0;
+
+            function shuffleArray(array) {
+                for (var i = array.length - 1; i > 0; i--) {
+                    var j = Math.floor(Math.random() * (i + 1));
+                    var temp = array[i];
+                    array[i] = array[j];
+                    array[j] = temp;
+                }
+            }
+
+            function loadLevel(levelIndex) {
+                currentStep = 0;
+                score = 0;
+                shuffleArray(levels[levelIndex].words);
+                updateLevelDisplay();
+                nextWord();
+            }
+
+            function updateLevelDisplay() {
+                $('#level').text('Рівень: ' + (currentLevel + 1));
+            }
+
+            function nextWord() {
+                if (currentStep < levels[currentLevel].words.length) {
+                    $('#word').text(levels[currentLevel].words[currentStep].word);
+                    $('#step').text('Крок ' + (currentStep + 1) + ' з ' + levels[currentLevel].words.length);
+                } else {
+                    $('#modal').show();
+                    var correctCount = score;
+                    var incorrectCount = levels[currentLevel].words.length - score;
+                    var percentage = (score / levels[currentLevel].words.length * 100).toFixed(2);
+                    $('#result').html('Правильно: ' + correctCount + '<br>Неправильно: ' + incorrectCount + '<br>Відсоток: ' + percentage + '%');
+
+                    // Check if it's the last level
+                    if (currentLevel < levels.length - 1) {
+                        currentLevel++;
+                        loadLevel(currentLevel);
+                    } else {
+                        // Calculate average percentage
+                        var totalScore = 0;
+                        var totalWords = 0;
+
+                        for (var i = 0; i < levels.length; i++) {
+                            totalScore += levels[i].correctCount || 0;
+                            totalWords += levels[i].words.length || 0;
+                        }
+
+                        var averagePercentage = (totalScore / totalWords * 100).toFixed(2);
+                        $('#result').append('<br>Середній відсоток: ' + averagePercentage + '%');
+                    }
+                }
+            }
+
+            $('#check').click(function () {
+                checkTranslation();
+            });
+
+            $('#prevWord').click(function () {
+                if (currentStep > 0) {
+                    currentStep--;
+                    nextWord();
+                }
+            });
+
+            $('#nextWord').click(function () {
+                if (currentStep < levels[currentLevel].words.length - 1) {
+                    currentStep++;
+                    nextWord();
+                }
+            });
+
+            function checkTranslation() {
+                var userTranslation = $('#translation').val().toLowerCase();
+
+                if (!userTranslation.trim()) {
+                    alert("Будь ласка, введіть переклад слова.");
+                    return;
+                }
+
+                if (userTranslation == levels[currentLevel].words[currentStep].translation.toLowerCase()) {
+                    score++;
+                    levels[currentLevel].correctCount = (levels[currentLevel].correctCount || 0) + 1;
+                }
+                currentStep++;
+                nextWord();
+
+                $('#translation').val('');
+            }
+
+            $('#closeModal').click(function () {
+                $('#modal').hide();
+            });
+
+            loadLevel(currentLevel);
+        });
+    </script>
+</body>
+
+</html>
