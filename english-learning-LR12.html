@@ -27,6 +27,26 @@
             border-radius: 10px;
         }
 
+        #levelButtons {
+            margin: 10px;
+        }
+
+        .levelButton {
+            background-color: #3498db;
+            color: #ffffff;
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .levelButton:hover {
+            background-color: #2980b9;
+        }
+
         #level {
             font-size: 20px;
             margin-bottom: 10px;
@@ -56,6 +76,11 @@
             border-radius: 5px;
             cursor: pointer;
             margin: 5px;
+            transition: background-color 0.3s;
+        }
+
+        #check:hover, #prevWord:hover, #nextWord:hover {
+            background-color: #2980b9;
         }
 
         #modal {
@@ -90,6 +115,11 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #closeModal:hover {
+            background-color: #c0392b;
         }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
@@ -97,18 +127,23 @@
 
 <body>
     <div id="app">
+        <div id="levelButtons">
+            <button id="easyLevel" class="levelButton">Початковий</button>
+            <button id="mediumLevel" class="levelButton">Середній</button>
+            <button id="hardLevel" class="levelButton">Високий</button>
+        </div>
         <div id="level">Рівень: 1</div>
         <div id="word"></div>
         <input type="text" id="translation">
-        <button id="check">Перевірити</button>
-        <button id="prevWord">Попереднє слово</button>
-        <button id="nextWord">Наступне слово</button>
+        <button id="check" class="levelButton">OK</button>
+        <button id="prevWord" class="levelButton">Попереднє слово</button>
+        <button id="nextWord" class="levelButton">Наступне слово</button>
         <div id="step"></div>
         <div id="score"></div>
     </div>
     <div id="modal">
         <div id="result"></div>
-        <button id="closeModal">Закрити</button>
+        <button id="closeModal" class="levelButton">Закрити</button>
     </div>
     <script>
         $(document).ready(function () {
@@ -121,6 +156,7 @@
             var currentLevel = 0;
             var currentStep = 0;
             var score = 0;
+            var userTranslations = [];
 
             function shuffleArray(array) {
                 for (var i = array.length - 1; i > 0; i--) {
@@ -134,6 +170,7 @@
             function loadLevel(levelIndex) {
                 currentStep = 0;
                 score = 0;
+                userTranslations = [];
                 shuffleArray(levels[levelIndex].words);
                 updateLevelDisplay();
                 nextWord();
@@ -143,9 +180,25 @@
                 $('#level').text('Рівень: ' + (currentLevel + 1));
             }
 
+            $('#easyLevel').click(function () {
+                currentLevel = 0;
+                loadLevel(currentLevel);
+            });
+
+            $('#mediumLevel').click(function () {
+                currentLevel = 1;
+                loadLevel(currentLevel);
+            });
+
+            $('#hardLevel').click(function () {
+                currentLevel = 2;
+                loadLevel(currentLevel);
+            });
+
             function nextWord() {
                 if (currentStep < levels[currentLevel].words.length) {
                     $('#word').text(levels[currentLevel].words[currentStep].word);
+                    $('#translation').val(userTranslations[currentStep] || '');
                     $('#step').text('Крок ' + (currentStep + 1) + ' з ' + levels[currentLevel].words.length);
                 } else {
                     $('#modal').show();
@@ -153,24 +206,6 @@
                     var incorrectCount = levels[currentLevel].words.length - score;
                     var percentage = (score / levels[currentLevel].words.length * 100).toFixed(2);
                     $('#result').html('Правильно: ' + correctCount + '<br>Неправильно: ' + incorrectCount + '<br>Відсоток: ' + percentage + '%');
-
-                    // Check if it's the last level
-                    if (currentLevel < levels.length - 1) {
-                        currentLevel++;
-                        loadLevel(currentLevel);
-                    } else {
-                        // Calculate average percentage
-                        var totalScore = 0;
-                        var totalWords = 0;
-
-                        for (var i = 0; i < levels.length; i++) {
-                            totalScore += levels[i].correctCount || 0;
-                            totalWords += levels[i].words.length || 0;
-                        }
-
-                        var averagePercentage = (totalScore / totalWords * 100).toFixed(2);
-                        $('#result').append('<br>Середній відсоток: ' + averagePercentage + '%');
-                    }
                 }
             }
 
@@ -200,14 +235,13 @@
                     return;
                 }
 
+                userTranslations[currentStep] = userTranslation;
+
                 if (userTranslation == levels[currentLevel].words[currentStep].translation.toLowerCase()) {
                     score++;
-                    levels[currentLevel].correctCount = (levels[currentLevel].correctCount || 0) + 1;
                 }
                 currentStep++;
                 nextWord();
-
-                $('#translation').val('');
             }
 
             $('#closeModal').click(function () {
